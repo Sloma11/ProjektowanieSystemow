@@ -3,7 +3,7 @@ import random
 
 def back_substitution(a, b):
     N = len(a)
-    x = [0] * N  
+    x = [0] * N 
 
     for i in range(N-1, -1, -1):
         x[i] = b[i] / a[i][i]
@@ -23,20 +23,17 @@ b = [4, -1, 2]
 # 0.0000104000 sekund
 #-------------------------------------
 """
-#size = 1000    0.0623225000 sekund
+size = 1000   # 0.0623225000 sekund
 #size = 10000    12.2518855000 sekund
-size = 40000 #  362.3816005000 sekund
+# size = 40000 #  362.3816005000 sekund
 
 
-A = [[random.randint(1, 100) if j >= i else 0 for j in range(size)] for i in range(size)]
+A = [[random.randint(1, 100) if j > i else 1 if j == i else 0 for j in range(size)] for i in range(size)]
 b = [random.randint(-100, 100) for _ in range(size)]
 
-print("kk")
 
 def solve():
     return back_substitution(A, b)
-
-x=solve()
 
 #print("Rozwiązanie:", x)
 execution_time = timeit.timeit(solve, number=1)
