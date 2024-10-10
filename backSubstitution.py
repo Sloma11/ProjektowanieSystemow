@@ -25,11 +25,13 @@ b = [4, -1, 2]
 """
 #size = 1000    0.0623225000 sekund
 #size = 10000    12.2518855000 sekund
-size = 1000000 
+size = 40000 #  362.3816005000 sekund
 
 
 A = [[random.randint(1, 100) if j >= i else 0 for j in range(size)] for i in range(size)]
 b = [random.randint(-100, 100) for _ in range(size)]
+
+print("kk")
 
 def solve():
     return back_substitution(A, b)
