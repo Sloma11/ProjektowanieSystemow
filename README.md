@@ -11,9 +11,9 @@
      - Linux: <br>
         ```source <nazwa_katalogu>/bin/activate```<br> 
      - Windows: <br>
-        ```<venv>\Scripts\activate.bat```
+        ```<nazwa_katalogu>\Scripts\activate.bat```
 
- - instalacja bibliotek: <br>
+ - instalacja bibliotek (wymaga instalatora "pip"): <br>
     ```pip install -r requirements.txt```
 
  - uruchomienie skryptu: <br>
