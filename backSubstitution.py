@@ -26,7 +26,7 @@ def get_first_table(n):
         table_dict['i'].append(i)
         table_dict['xi'].append(i)
         table_dict['bi'].append(i)
-        table_dict['aii'].append(i)
+        table_dict['aii'].append([i,i])
     return pd.DataFrame(data=table_dict)
 
 def get_second_table(n):
@@ -47,6 +47,14 @@ def get_second_table(n):
             table_dict['xi'].append(i)
     return pd.DataFrame(data=table_dict)
 
+def get_vertices_and_connections(merged_table):
+    # vertices
+    vertices = pd.concat([merged_table["aii"], merged_table["aji"]], axis=0)
+    vertices = vertices.dropna().drop_duplicates()
+    display(vertices)
+    # connections
+    # in will be hard
+
 #-------------------------------------
 """""
 A= [
@@ -59,15 +67,24 @@ b = [4, -1, 2]
 # 0.0000104000 sekund
 #-------------------------------------
 """
-size = 4
+# size = 
 #size = 1000   # 0.0623225000 sekund
 #size = 10000    12.2518855000 sekund
 # size = 40000 #  362.3816005000 sekund
 
 
-A = [[random.randint(1, 100) if j > i else 1 if j == i else 0 for j in range(size)] for i in range(size)]
-b = [random.randint(-100, 100) for _ in range(size)]
+# A = [[random.randint(1, 100) if j > i else 1 if j == i else 0 for j in range(size)] for i in range(size)]
+# b = [random.randint(-100, 100) for _ in range(size)]
 
+A= [
+    [1, 3, 5],
+    [0, 1, 2],
+    [0, 0, 1]
+    ]
+
+b = [2,4,3]
+
+size = 3
 
 def solve():
     return back_substitution(A, b)
@@ -83,6 +100,8 @@ display(ft)
 print("-------------------")
 display(st)
 
-result = pd.concat([ft, st], ignore_index=True)
+# result = pd.concat([ft, st], ignore_index=True)
+result = pd.merge(ft, st, how='left')
 print("-------------------")
 display(result)
+get_vertices_and_connections(result)
