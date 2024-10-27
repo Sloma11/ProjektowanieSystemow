@@ -2,7 +2,8 @@ import timeit
 import random
 import pandas as pd
 from IPython.display import display
-
+import numpy as np
+from graph_gen import Graph
 
 def back_substitution(a, b):
     N = len(a)
@@ -47,14 +48,51 @@ def get_second_table(n):
             table_dict['xi'].append(i)
     return pd.DataFrame(data=table_dict)
 
-def get_vertices_and_connections(merged_table):
-    # vertices
-    vertices = pd.concat([merged_table["aii"], merged_table["aji"]], axis=0)
-    vertices = vertices.dropna().drop_duplicates()
-    display(vertices)
-    # connections
-    # in will be hard
+def find_by_value(table, column_to_search, value, column_of_result):
+    result = table.where(
+        table[column_to_search] == value
+    )[column_of_result].dropna()
+    if result.size == 0:
+        return None
+    return result.values[0]
 
+def append_value(table, value):
+    table.loc[table.shape[0]] = value
+
+def get_vertices_and_connections(merged_table):
+    # VERTICES
+    ver1 = merged_table["aii"].dropna().drop_duplicates()
+    ver2 = merged_table["aji"].dropna().drop_duplicates()
+    ver1 = pd.DataFrame(data= {"ver": ver1, "type": 0})
+    ver2 = pd.DataFrame(data= {"ver": ver2, "type": 1})
+
+    vertices = pd.concat([ver1, ver2], axis=0).reset_index(drop=True)
+
+    # CONNECTIONS
+    x_conn = merged_table[['aii', 'aji']].dropna().rename(columns={"aii":"from", "aji":"to"})
+    
+    conn_hepl_table = merged_table[['bi', 'bj', 'aii', 'aji']]
+    b_conn = pd.DataFrame(data={"from": [], "to": []})
+    
+    for i in range(conn_hepl_table.shape[0]):
+
+        if i != conn_hepl_table.shape[0]-1:
+
+            to = find_by_value(conn_hepl_table[i+1:], 'bj', conn_hepl_table["bj"][i], 'aji')
+            if to != None:
+                append_value(b_conn, [conn_hepl_table['aji'][i], to])
+                
+            else:
+                to = find_by_value(conn_hepl_table, 'bi', conn_hepl_table["bj"][i], 'aii')
+                append_value(b_conn, [conn_hepl_table['aji'][i], to])
+
+        connections = pd.concat([x_conn, b_conn], axis=0).reset_index(drop=True)
+
+    return {
+        "connections": connections,
+        "vertices": vertices,
+    }
+    
 #-------------------------------------
 """""
 A= [
@@ -84,7 +122,7 @@ A= [
 
 b = [2,4,3]
 
-size = 3
+size = 100
 
 def solve():
     return back_substitution(A, b)
@@ -99,9 +137,18 @@ st = get_second_table(size)
 display(ft)
 print("-------------------")
 display(st)
-
-# result = pd.concat([ft, st], ignore_index=True)
-result = pd.merge(ft, st, how='left')
 print("-------------------")
-display(result)
-get_vertices_and_connections(result)
+
+merged_help_table = pd.merge(ft, st, how='left')
+display(merged_help_table)
+print("-------------------")
+
+ver_and_con = get_vertices_and_connections(merged_help_table)
+print("----- VERTICES ----")
+display(ver_and_con['vertices'])
+print("----- CONNECTIONS ----")
+display(ver_and_con['connections'])
+
+print("----- GRAPH -----")
+graph = Graph(ver_and_con["connections"], ver_and_con["vertices"])
+graph.print()
