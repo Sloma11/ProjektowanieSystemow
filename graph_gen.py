@@ -27,10 +27,12 @@ class Graph:
 
         # end setup
 
-        for ver in vertices['ver']:
+        for i in range(len(vertices)):
+            ver = vertices.iloc[i]['ver']
+            ver_type = '@' if vertices.iloc[i]['type'] == 0 else 'O'
             x = ver[1]*scale + xoffset 
             y = ver[0]*scale
-            self.canvas = insert(self.canvas, [x,y], 'O', scale) 
+            self.canvas = insert(self.canvas, [x,y], ver_type, scale) 
             if ver[1] == ver[0]:
                 self.canvas = insert(self.canvas, [x-1,y], '←', scale)
                 xn = "x" + str(ver[0])
