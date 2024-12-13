@@ -30,10 +30,6 @@ def get_first_table(n):
     return pd.DataFrame(data=table_dict)
 
 
-
-
-
-
 def get_second_table(n):
     table_dict = {
         'i': [],
@@ -115,7 +111,8 @@ def fix_i(i, j):
     return i + j - 1
 
 def fix_j(i, j, N):
-    return j - i + 1 if j < i +(N + 1) / 2 else N - j + i + 1
+    return j - i + 1 if j < i +(N+1) / 2 else N - j + i + 1 + (1 - N%2)
+    # added +(1-N%2)
 
 def fix_vertices(vertices, N):
     new_vertices = {'ver': [], 'type': []}
@@ -128,7 +125,7 @@ def fix_vertices(vertices, N):
         ii = fix_i(i, j)
         jj = fix_j(i, j, N)
 
-        new_vertices['ver'].append([jj, ii])
+        new_vertices['ver'].append([ii, jj])
         new_vertices['type'].append(row.loc['type']) 
     return pd.DataFrame(data=new_vertices)
 
@@ -143,7 +140,7 @@ def fix_connections(connections, N):
             ii = fix_i(i, j)
             jj = fix_j(i, j, N)
 
-            new_connections[col].append([jj, ii])
+            new_connections[col].append([ii, jj])
     return pd.DataFrame(data=new_connections)
 
 
@@ -178,7 +175,7 @@ A= [
 
 b = [2,4,3]
 
-size = 7
+size = 10
 
 def solve():
     return back_substitution(A, b)
