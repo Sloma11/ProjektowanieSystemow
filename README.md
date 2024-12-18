@@ -31,3 +31,7 @@ def back_substitution(a, b):
            b[j] = b[j] - a[j][i] * x[i]
     return x
 ```
+
+## Generowane grafy
+![img1](./img/1.png)
+![img2](./img/2.png)
