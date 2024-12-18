@@ -20,7 +20,7 @@ class Graph:
         xoffset = 6
         spacing = 1
         scale = spacing + 1
-        raw_size = vertices['ver'].max()[0]
+        raw_size = vertices['i'].max()
         size = raw_size * scale + 1 
         #Generate self.canvas
         self.canvas = [' ' * (size + xoffset)] * size
@@ -28,18 +28,19 @@ class Graph:
         # end setup
 
         for i in range(len(vertices)):
-            ver = vertices.iloc[i]['ver']
+            ver = vertices.iloc[i]['i'], vertices.iloc[i]['j']
+
             ver_type = '@' if vertices.iloc[i]['type'] == 0 else 'O'
-            x = ver[1]*scale + xoffset 
-            y = ver[0]*scale
+            x = ver[0]*scale + xoffset 
+            y = ver[1]*scale
             self.canvas = insert(self.canvas, [x,y], ver_type, scale) 
             if ver[1] == ver[0]:
                 self.canvas = insert(self.canvas, [x-1,y], '←', scale)
-                xn = "x" + str(ver[0])
+                xn = "x" + str(ver[1])
                 self.canvas = insert(self.canvas, [x-2 - len(xn),y], xn, scale)
             
-            if ver[1] == raw_size:
-                self.canvas = insert_end(self.canvas, y, "← b" + str(ver[0]))
+            if ver[0] == raw_size:
+                self.canvas = insert_end(self.canvas, y, "← b" + str(ver[1]))
 
 
         for idx, con in connections.iterrows():

@@ -57,75 +57,100 @@ def find_by_value(table, column_to_search, value, column_of_result):
     return result.values[0]
 
 def append_value(table, value):
-    table.loc[table.shape[0]] = value
+    table.loc[-1] = [0 for _ in value]
+    for i, val in enumerate(value):
+        table.iloc[-1][table.columns[i]] = val
 
-def get_vertices_and_connections(merged_table):
+def get_vertices(merged_table):
     # VERTICES
-    ver1 = merged_table["aii"].dropna().drop_duplicates()
-    ver2 = merged_table["aji"].dropna().drop_duplicates()
-    ver1 = pd.DataFrame(data= {"ver": ver1, "type": 0})
-    ver2 = pd.DataFrame(data= {"ver": ver2, "type": 1})
+    ver1 = merged_table[['i', 'j']].dropna().drop_duplicates()
+    ver1.loc[:, 'type'] = 1
+    ver2 = merged_table['aii'].dropna().drop_duplicates()
+    ver2i = [i[0] for i in ver2[:ver2.shape[0]]]
+    ver2 = pd.DataFrame(data={'i': ver2i, 'j': ver2i, 'type': [0 for _ in ver2i]})
 
-    vertices = pd.concat([ver1, ver2], axis=0).reset_index(drop=True)
+    vertices = pd.concat([ver1, ver2], axis=0)
+    vertices = vertices.sort_values(['i','j'], ignore_index=True, ascending=False).reset_index(drop=True)
+    return vertices.astype(int)
 
+def get_connections(merged_table):
     # CONNECTIONS
     # wrong
     # x_conn = merged_table[['aii', 'aji']].dropna().rename(columns={"aii":"from", "aji":"to"})
 
     x_conn = {'from': [], 'to': []}
     for i in range(merged_table.shape[0] - 1):
-        to = merged_table.iloc[i].loc['aji']
+        to = [
+            int(merged_table.iloc[i].loc['i']), 
+            int(merged_table.iloc[i].loc['j'])
+        ]
         x_conn['to'].append(to)
+        # print (to[1], " ", to[0] -1)
 
         fr = None
-        if to[0] != to[1] -1:
-            fr = merged_table.iloc[i-1].loc['aji']
+        if to[1] != to[0] -1:
+            fr = [
+                int(merged_table.iloc[i-1].loc['i']),
+                int(merged_table.iloc[i-1].loc['j'])
+            ]
         else:
-            fr = merged_table.iloc[i].loc['aii']
+            fr = int(merged_table.iloc[i].loc['i'])
+            fr = [fr, fr]
+            print(fr)
         x_conn['from'].append(fr)
     x_conn = pd.DataFrame(data=x_conn)
     
-    conn_hepl_table = merged_table[['bi', 'bj', 'aii', 'aji']]
-    b_conn = pd.DataFrame(data={"from": [], "to": []})
+    conn_hepl_table = merged_table[['bi', 'bj', 'i', 'j']]
+    b_conn = pd.DataFrame(data={"from": [[0,0]], "to": [[0,0]]})
+    print(b_conn.shape)
     
     for i in range(conn_hepl_table.shape[0]):
 
         if i != conn_hepl_table.shape[0]-1:
 
-            to = find_by_value(conn_hepl_table[i+1:], 'bj', conn_hepl_table["bj"][i], 'aji')
-            if to != None:
-                append_value(b_conn, [conn_hepl_table['aji'][i], to])
+            to = find_by_value(conn_hepl_table[i+1:], 'bj', conn_hepl_table["bj"][i], ['i','j'])
+            if to is not None:
+                to = to.astype(int)
+                fr = [
+                    int(conn_hepl_table['i'][i]),
+                    int(conn_hepl_table['j'][i])
+                ]
+                b_conn.loc[i] = [fr,to]
+                # append_value(b_conn, [fr, to])
                 
             else:
-                to = find_by_value(conn_hepl_table, 'bi', conn_hepl_table["bj"][i], 'aii')
-                append_value(b_conn, [conn_hepl_table['aji'][i], to])
+                to = int(find_by_value(conn_hepl_table, 'bi', conn_hepl_table["bj"][i], 'i'))
+                to = [to, to]
+                fr = [
+                    int(conn_hepl_table['i'][i]),
+                    int(conn_hepl_table['j'][i])
+                ]
+                b_conn.loc[i] = [fr,to]
+                # append_value(b_conn, [fr, to])
 
     connections = pd.concat([x_conn, b_conn], axis=0).reset_index(drop=True)
-
-    return {
-        "connections": connections,
-        "vertices": vertices,
-    }
+    return connections
 
 def fix_i(i, j):
     return i + j - 1
 
 def fix_j(i, j, N):
-    return j - i + 1 if j < i +(N+1) / 2 else N - j + i + 1 + (1 - N%2)
+    return j - i + 1 if j < i +(N+1) / 2 \
+        else N - j + i + 1 + (1 - N%2)
     # added +(1-N%2)
 
 def fix_vertices(vertices, N):
-    new_vertices = {'ver': [], 'type': []}
+    new_vertices = {'i': [], 'j': [], 'type': []}
     for idx in range(vertices.shape[0]):
         row = vertices.iloc[idx]
-        ver = row.loc['ver']
-        j = ver[1]
-        i = ver[0]
+        i = row.loc['j']
+        j = row.loc['i']
 
         ii = fix_i(i, j)
         jj = fix_j(i, j, N)
 
-        new_vertices['ver'].append([ii, jj])
+        new_vertices['j'].append(ii)
+        new_vertices['i'].append(jj)
         new_vertices['type'].append(row.loc['type']) 
     return pd.DataFrame(data=new_vertices)
 
@@ -134,13 +159,13 @@ def fix_connections(connections, N):
     for idx in range(connections.shape[0]):
         row = connections.iloc[idx]
         for col in ['to', 'from']:
-            j = row.loc[col][1]
-            i = row.loc[col][0]
+            i = row.loc[col][1]
+            j = row.loc[col][0]
 
             ii = fix_i(i, j)
             jj = fix_j(i, j, N)
 
-            new_connections[col].append([ii, jj])
+            new_connections[col].append([jj, ii])
     return pd.DataFrame(data=new_connections)
 
 
@@ -175,7 +200,7 @@ A= [
 
 b = [2,4,3]
 
-size = 10
+size = 5
 
 def solve():
     return back_substitution(A, b)
@@ -195,27 +220,27 @@ print("-------------------")
 merged_help_table = pd.merge(ft, st, how='left')
 display(merged_help_table)
 print("-------------------")
-
-ver_and_con = get_vertices_and_connections(merged_help_table)
 print("----- VERTICES ----")
-display(ver_and_con['vertices'])
-print("----- CONNECTIONS ----")
-display(ver_and_con['connections'])
+vertices = get_vertices(merged_help_table)
+display(vertices)
 
+print("----- CONNECTIONS ----")
+connections = get_connections(merged_help_table)
+display(connections)
 print("----- GRAPH -----")
-graph = Graph(ver_and_con["connections"], ver_and_con["vertices"])
-graph.print()
+# graph = Graph(connections, vertices)
+# graph.print()
 
 from graph_gen_sdl import draw_graph
 
-draw_graph(ver_and_con['vertices'], ver_and_con['connections'])
+draw_graph(vertices, connections)
 
 
-fixed_verts = fix_vertices(ver_and_con['vertices'], size)
+fixed_verts = fix_vertices(vertices, size)
 print("----- FIXED VERTICES ----")
 display(fixed_verts)
 
-fixed_connections = fix_connections(ver_and_con['connections'], size)
+fixed_connections = fix_connections(connections, size)
 print("----- FIXED CONNECTIONS ----")
 display(fixed_connections)
 

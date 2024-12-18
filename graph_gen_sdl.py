@@ -47,8 +47,8 @@ def draw_graph(verts, connections):
     # exit_event = False
 
     for idx in range(verts.shape[0]):
-        row = verts.iloc[idx]
-        vert_list['pos'].append(real_pos(row.loc['ver']))
+        ver = verts.iloc[idx]
+        vert_list['pos'].append(real_pos([ver['i'], ver['j']]))
         vert_list['type'].append(verts.iloc[idx].loc['type'])
     verts = pd.DataFrame(data=vert_list)
 
